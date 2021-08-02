@@ -19,6 +19,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.OwnerCommand;
 import com.jagrosh.jmusicbot.settings.Settings;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
+
+import java.util.Collections;
 
 /**
  *
@@ -31,38 +37,48 @@ public class AutoplaylistCmd extends OwnerCommand
     public AutoplaylistCmd(Bot bot)
     {
         this.bot = bot;
-        this.guildOnly = true;
         this.name = "autoplaylist";
         this.arguments = "<name|NONE>";
         this.help = "sets the default playlist for the server";
         this.aliases = bot.getConfig().getAliases(this.name);
+        this.options = Collections.singletonList(new OptionData(OptionType.STRING, "name", "Playlist name, or none to remove", true));
     }
 
     @Override
-    public void execute(CommandEvent event) 
+    public void execute(SlashCommandEvent event)
     {
-        if(event.getArgs().isEmpty())
+        if(!event.isFromGuild())
         {
-            event.reply(event.getClient().getError()+" Please include a playlist name or NONE");
+            event.reply(getClient().getError()+" This command cannot be used in Direct messages").setEphemeral(true).queue();
             return;
         }
-        if(event.getArgs().equalsIgnoreCase("none"))
+
+        String args = event.getOption("Name").getAsString();
+
+        if(args.equalsIgnoreCase("none"))
         {
-            Settings settings = event.getClient().getSettingsFor(event.getGuild());
+            Settings settings = getClient().getSettingsFor(event.getGuild());
             settings.setDefaultPlaylist(null);
-            event.reply(event.getClient().getSuccess()+" Cleared the default playlist for **"+event.getGuild().getName()+"**");
+            event.reply(getClient().getSuccess()+" Cleared the default playlist for **"+event.getGuild().getName()+"**")
+                    .allowedMentions(Collections.emptyList())
+                    .queue();
             return;
         }
-        String pname = event.getArgs().replaceAll("\\s+", "_");
+        String pname = args.replaceAll("\\s+", "_");
         if(bot.getPlaylistLoader().getPlaylist(pname)==null)
         {
-            event.reply(event.getClient().getError()+" Could not find `"+pname+".txt`!");
+            event.reply(getClient().getError()+" Could not find `"+pname+".txt`!")
+                    .allowedMentions(Collections.emptyList())
+                    .setEphemeral(true)
+                    .queue();
         }
         else
         {
-            Settings settings = event.getClient().getSettingsFor(event.getGuild());
+            Settings settings = getClient().getSettingsFor(event.getGuild());
             settings.setDefaultPlaylist(pname);
-            event.reply(event.getClient().getSuccess()+" The default playlist for **"+event.getGuild().getName()+"** is now `"+pname+"`");
+            event.reply(getClient().getSuccess()+" The default playlist for **"+event.getGuild().getName()+"** is now `"+pname+"`")
+                    .allowedMentions(Collections.emptyList())
+                    .queue();
         }
     }
 }

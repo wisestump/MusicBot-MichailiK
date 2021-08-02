@@ -24,6 +24,10 @@ import com.sedmelluq.discord.lavaplayer.tools.PlayerLibrary;
 import net.dv8tion.jda.api.JDAInfo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  *
@@ -42,11 +46,10 @@ public class DebugCmd extends OwnerCommand
         this.name = "debug";
         this.help = "shows debug info";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = false;
     }
 
     @Override
-    protected void execute(CommandEvent event)
+    protected void execute(SlashCommandEvent event)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("```\nSystem Properties:");
@@ -78,10 +81,13 @@ public class DebugCmd extends OwnerCommand
                 .append("\n  Users = ").append(event.getJDA().getUserCache().size());
         sb.append("\n```");
         
-        if(event.isFromType(ChannelType.PRIVATE) 
-                || event.getSelfMember().hasPermission(event.getTextChannel(), Permission.MESSAGE_ATTACH_FILES))
+        /*if(event.getChannelType() == ChannelType.PRIVATE
+                || event.getGuild().getSelfMember().hasPermission(event.getTextChannel(), Permission.MESSAGE_ATTACH_FILES))
             event.getChannel().sendFile(sb.toString().getBytes(), "debug_information.txt").queue();
         else
-            event.reply("Debug Information: " + sb.toString());
+            event.reply("Debug Information: " + sb.toString()).queue();*/
+        event.reply(sb.toString())
+                .setEphemeral(true)
+                .queue();
     }
 }

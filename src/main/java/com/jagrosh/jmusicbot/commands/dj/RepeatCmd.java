@@ -15,10 +15,14 @@
  */
 package com.jagrosh.jmusicbot.commands.dj;
 
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.DJCommand;
 import com.jagrosh.jmusicbot.settings.Settings;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+import java.util.Collections;
 
 /**
  *
@@ -33,36 +37,22 @@ public class RepeatCmd extends DJCommand
         this.help = "re-adds music to the queue when finished";
         this.arguments = "[on|off]";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = true;
-    }
-    
-    // override musiccommand's execute because we don't actually care where this is used
-    @Override
-    protected void execute(CommandEvent event) 
-    {
-        boolean value;
-        Settings settings = event.getClient().getSettingsFor(event.getGuild());
-        if(event.getArgs().isEmpty())
-        {
-            value = !settings.getRepeatMode();
-        }
-        else if(event.getArgs().equalsIgnoreCase("true") || event.getArgs().equalsIgnoreCase("on"))
-        {
-            value = true;
-        }
-        else if(event.getArgs().equalsIgnoreCase("false") || event.getArgs().equalsIgnoreCase("off"))
-        {
-            value = false;
-        }
-        else
-        {
-            event.replyError("Valid options are `on` or `off` (or leave empty to toggle)");
-            return;
-        }
-        settings.setRepeatMode(value);
-        event.replySuccess("Repeat mode is now `"+(value ? "ON" : "OFF")+"`");
+        this.options = Collections.singletonList(new OptionData(OptionType.BOOLEAN, "enable", "Set repeat mode toggle. Leave empty to toggle", false));
     }
 
     @Override
-    public void doCommand(CommandEvent event) { /* Intentionally Empty */ }
+    public void doCommand(SlashCommandEvent event)
+    {
+        boolean hasValue = event.getOption("Repeat Mode") != null;
+        boolean value;
+
+        Settings settings = getClient().getSettingsFor(event.getGuild());
+        if(!hasValue)
+            value = !settings.getRepeatMode();
+        else
+            value = event.getOption("Repeat Mode").getAsBoolean();
+
+        settings.setRepeatMode(value);
+        event.reply(getClient().getSuccess()+" Repeat mode is now `"+(value ? "ON" : "OFF")+"`").queue();
+    }
 }

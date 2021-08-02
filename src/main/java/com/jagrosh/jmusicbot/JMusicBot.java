@@ -32,6 +32,7 @@ import java.util.Arrays;
 import javax.security.auth.login.LoginException;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.slf4j.Logger;
@@ -85,7 +86,7 @@ public class JMusicBot
                                 RECOMMENDED_PERMS);
         aboutCommand.setIsAuthor(false);
         aboutCommand.setReplacementCharacter("\uD83C\uDFB6"); // 🎶
-        
+
         // set up the command client
         CommandClientBuilder cb = new CommandClientBuilder()
                 .setPrefix(config.getPrefix())
@@ -95,19 +96,20 @@ public class JMusicBot
                 .setHelpWord(config.getHelp())
                 .setLinkedCacheSize(200)
                 .setGuildSettingsManager(settings)
-                .addCommands(aboutCommand,
-                        new PingCommand(),
+                .addSlashCommands(/*aboutCommand,
+                        new PingCommand(),*/
                         new SettingsCmd(bot),
                         
                         new LyricsCmd(bot),
                         new NowplayingCmd(bot),
                         new PlayCmd(bot),
                         new PlaylistsCmd(bot),
+                        new PlayPlaylistCmd(bot),
                         new QueueCmd(bot),
+                        new RemoveAllCmd(bot),
                         new RemoveCmd(bot),
                         new SearchCmd(bot),
                         new SCSearchCmd(bot),
-                        new SeekCmd(bot),
                         new ShuffleCmd(bot),
                         new SkipCmd(bot),
 
@@ -117,26 +119,18 @@ public class JMusicBot
                         new PauseCmd(bot),
                         new PlaynextCmd(bot),
                         new RepeatCmd(bot),
+                        new ResumeCmd(bot),
                         new SkiptoCmd(bot),
                         new StopCmd(bot),
                         new VolumeCmd(bot),
-                        
-                        new PrefixCmd(bot),
+
                         new SetdjCmd(bot),
                         new SettcCmd(bot),
                         new SetvcCmd(bot),
-                        
-                        new AutoplaylistCmd(bot),
-                        new DebugCmd(bot),
-                        new PlaylistCmd(bot),
-                        new SetavatarCmd(bot),
-                        new SetgameCmd(bot),
-                        new SetnameCmd(bot),
-                        new SetstatusCmd(bot),
-                        new ShutdownCmd(bot)
-                );
-        if(config.useEval())
-            cb.addCommand(new EvalCmd(bot));
+
+                        new OwnerTopLevelCommand(bot)
+                  // Crashes when not set for some reason
+                ).setCoOwnerIds(String.valueOf(config.getOwnerId()));
         boolean nogame = false;
         if(config.getStatus()!=OnlineStatus.UNKNOWN)
             cb.setStatus(config.getStatus());

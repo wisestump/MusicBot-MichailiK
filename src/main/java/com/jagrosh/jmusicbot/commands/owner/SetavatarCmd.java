@@ -17,11 +17,17 @@ package com.jagrosh.jmusicbot.commands.owner;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.OwnerCommand;
 import com.jagrosh.jmusicbot.utils.OtherUtil;
 import net.dv8tion.jda.api.entities.Icon;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 
 /**
  *
@@ -35,33 +41,34 @@ public class SetavatarCmd extends OwnerCommand
         this.help = "sets the avatar of the bot";
         this.arguments = "<url>";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = false;
+        this.options = Collections.singletonList(new OptionData(OptionType.STRING, "url", "image url to use", true));
     }
     
     @Override
-    protected void execute(CommandEvent event) 
+    protected void execute(SlashCommandEvent event)
     {
-        String url;
-        if(event.getArgs().isEmpty())
+
+        String url = event.getOption("url").getAsString();
+        /*if(event.getArgs().isEmpty())
             if(!event.getMessage().getAttachments().isEmpty() && event.getMessage().getAttachments().get(0).isImage())
                 url = event.getMessage().getAttachments().get(0).getUrl();
             else
                 url = null;
         else
-            url = event.getArgs();
+            url = event.getArgs();*/
         InputStream s = OtherUtil.imageFromUrl(url);
         if(s==null)
         {
-            event.reply(event.getClient().getError()+" Invalid or missing URL");
+            event.reply(getClient().getError()+" Invalid or missing URL").setEphemeral(true).queue();
         }
         else
         {
             try {
-            event.getSelfUser().getManager().setAvatar(Icon.from(s)).queue(
-                    v -> event.reply(event.getClient().getSuccess()+" Successfully changed avatar."), 
-                    t -> event.reply(event.getClient().getError()+" Failed to set avatar."));
+            event.getJDA().getSelfUser().getManager().setAvatar(Icon.from(s)).queue(
+                    v -> event.reply(getClient().getSuccess()+" Successfully changed avatar.").setEphemeral(true).queue(),
+                    t -> event.reply(getClient().getError()+" Failed to set avatar.").setEphemeral(true).queue());
             } catch(IOException e) {
-                event.reply(event.getClient().getError()+" Could not load from provided URL.");
+                event.reply(getClient().getError()+" Could not load from provided URL.").setEphemeral(true).queue();
             }
         }
     }

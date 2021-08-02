@@ -17,6 +17,7 @@ package com.jagrosh.jmusicbot.commands.general;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
@@ -25,12 +26,13 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 
 /**
  *
  * @author John Grosh <john.a.grosh@gmail.com>
  */
-public class SettingsCmd extends Command 
+public class SettingsCmd extends SlashCommand
 {
     private final static String EMOJI = "\uD83C\uDFA7"; // 🎧
     
@@ -39,22 +41,26 @@ public class SettingsCmd extends Command
         this.name = "settings";
         this.help = "shows the bots settings";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = true;
     }
     
     @Override
-    protected void execute(CommandEvent event) 
+    protected void execute(SlashCommandEvent event)
     {
-        Settings s = event.getClient().getSettingsFor(event.getGuild());
+        if(!event.isFromGuild())
+        {
+            event.reply(getClient().getError()+" This command cannot be used in Direct messages").setEphemeral(true).queue();
+            return;
+        }
+        Settings s = getClient().getSettingsFor(event.getGuild());
         MessageBuilder builder = new MessageBuilder()
                 .append(EMOJI + " **")
-                .append(FormatUtil.filter(event.getSelfUser().getName()))
+                .append(event.getJDA().getSelfUser().getName())
                 .append("** settings:");
         TextChannel tchan = s.getTextChannel(event.getGuild());
         VoiceChannel vchan = s.getVoiceChannel(event.getGuild());
         Role role = s.getRole(event.getGuild());
         EmbedBuilder ebuilder = new EmbedBuilder()
-                .setColor(event.getSelfMember().getColor())
+                .setColor(event.getGuild().getSelfMember().getColor())
                 .setDescription("Text Channel: " + (tchan == null ? "Any" : "**#" + tchan.getName() + "**")
                         + "\nVoice Channel: " + (vchan == null ? "Any" : "**" + vchan.getName() + "**")
                         + "\nDJ Role: " + (role == null ? "None" : "**" + role.getName() + "**")
@@ -65,7 +71,9 @@ public class SettingsCmd extends Command
                 .setFooter(event.getJDA().getGuilds().size() + " servers | "
                         + event.getJDA().getGuilds().stream().filter(g -> g.getSelfMember().getVoiceState().inVoiceChannel()).count()
                         + " audio connections", null);
-        event.getChannel().sendMessage(builder.setEmbed(ebuilder.build()).build()).queue();
+        event.reply(builder.setEmbed(ebuilder.build()).build())
+                .setEphemeral(true)
+                .queue();
     }
     
 }

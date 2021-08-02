@@ -15,6 +15,7 @@
  */
 package com.jagrosh.jmusicbot.commands.admin;
 
+import java.util.Collections;
 import java.util.List;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.utils.FinderUtil;
@@ -22,7 +23,12 @@ import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.AdminCommand;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  *
@@ -34,36 +40,35 @@ public class SettcCmd extends AdminCommand
     {
         this.name = "settc";
         this.help = "sets the text channel for music commands";
-        this.arguments = "<channel|NONE>";
+        this.arguments = "[channel]";
         this.aliases = bot.getConfig().getAliases(this.name);
+        this.options = Collections.singletonList(new OptionData(OptionType.CHANNEL, "channel", "Sets the text channel. Leave it empty to remove the text channel.", false));
     }
-    
-    @Override
-    protected void execute(CommandEvent event) 
+
+    public void doCommand(SlashCommandEvent event)
     {
-        if(event.getArgs().isEmpty())
-        {
-            event.reply(event.getClient().getError()+" Please include a text channel or NONE");
-            return;
-        }
-        Settings s = event.getClient().getSettingsFor(event.getGuild());
-        if(event.getArgs().equalsIgnoreCase("none"))
+        Settings s = getClient().getSettingsFor(event.getGuild());
+        OptionMapping channel = event.getOption("channel");
+
+        if(channel == null)
         {
             s.setTextChannel(null);
-            event.reply(event.getClient().getSuccess()+" Music commands can now be used in any channel");
+            event.reply(getClient().getSuccess()+" Music commands can now be used in any channel")
+                .queue();
         }
         else
         {
-            List<TextChannel> list = FinderUtil.findTextChannels(event.getArgs(), event.getGuild());
-            if(list.isEmpty())
-                event.reply(event.getClient().getWarning()+" No Text Channels found matching \""+event.getArgs()+"\"");
-            else if (list.size()>1)
-                event.reply(event.getClient().getWarning()+FormatUtil.listOfTChannels(list, event.getArgs()));
-            else
+            if(channel.getAsGuildChannel().getType() != ChannelType.TEXT)
             {
-                s.setTextChannel(list.get(0));
-                event.reply(event.getClient().getSuccess()+" Music commands can now only be used in <#"+list.get(0).getId()+">");
+                event.reply(getClient().getError()+" The channel must be a text channel!")
+                    .setEphemeral(true)
+                    .queue();
+                return;
             }
+            s.setTextChannel((TextChannel) channel.getAsGuildChannel());
+            event.reply(getClient().getSuccess()+" Music commands can now only be used in "+channel.getAsGuildChannel().getAsMention())
+                .queue();
+
         }
     }
     

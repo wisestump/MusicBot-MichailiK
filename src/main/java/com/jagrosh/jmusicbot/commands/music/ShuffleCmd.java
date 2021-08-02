@@ -19,6 +19,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.MusicCommand;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 
 /**
  *
@@ -37,22 +38,25 @@ public class ShuffleCmd extends MusicCommand
     }
 
     @Override
-    public void doCommand(CommandEvent event) 
+    public void doCommand(SlashCommandEvent event)
     {
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-        int s = handler.getQueue().shuffle(event.getAuthor().getIdLong());
+        int s = handler.getQueue().shuffle(event.getUser().getIdLong());
         switch (s) 
         {
             case 0:
-                event.replyError("You don't have any music in the queue to shuffle!");
+                event.reply(getClient().getError()+" You don't have any music in the queue to shuffle!")
+                    .setEphemeral(true)
+                    .queue();
                 break;
             case 1:
-                event.replyWarning("You only have one song in the queue!");
+                event.reply(getClient().getWarning()+" You only have one song in the queue!")
+                    .setEphemeral(true)
+                    .queue();
                 break;
             default:
-                event.replySuccess("You successfully shuffled your "+s+" entries.");
+                event.reply(getClient().getSuccess()+" You successfully shuffled your "+s+" entries.").queue();
                 break;
         }
     }
-    
 }

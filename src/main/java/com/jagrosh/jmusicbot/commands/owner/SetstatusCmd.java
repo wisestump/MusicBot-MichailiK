@@ -19,6 +19,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.OwnerCommand;
 import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
+
+import java.util.Collections;
 
 /**
  *
@@ -32,25 +38,40 @@ public class SetstatusCmd extends OwnerCommand
         this.help = "sets the status the bot displays";
         this.arguments = "<status>";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = false;
+        this.options = Collections.singletonList(
+                new OptionData(OptionType.STRING, "status", "Status to use", true)
+                    .addChoice("Online", "Online")
+                    .addChoice("Idle", "Idle")
+                    .addChoice("Do not disturb", "DND")
+                    .addChoice("Invisible", "Invisible")
+                );
     }
     
     @Override
-    protected void execute(CommandEvent event) 
+    protected void execute(SlashCommandEvent event)
     {
         try {
-            OnlineStatus status = OnlineStatus.fromKey(event.getArgs());
+            String arg = event.getOption("Status").getAsString();
+
+
+            OnlineStatus status = OnlineStatus.fromKey(arg);
             if(status==OnlineStatus.UNKNOWN)
             {
-                event.replyError("Please include one of the following statuses: `ONLINE`, `IDLE`, `DND`, `INVISIBLE`");
+                event.reply(getClient().getError()+" Please include one of the following statuses: `ONLINE`, `IDLE`, `DND`, `INVISIBLE`")
+                    .setEphemeral(true)
+                    .queue();
             }
             else
             {
                 event.getJDA().getPresence().setStatus(status);
-                event.replySuccess("Set the status to `"+status.getKey().toUpperCase()+"`");
+                event.reply(getClient().getSuccess()+" Set the status to `"+status.getKey().toUpperCase()+"`")
+                    .setEphemeral(true)
+                    .queue();
             }
         } catch(Exception e) {
-            event.reply(event.getClient().getError()+" The status could not be set!");
+            event.reply(getClient().getError()+" The status could not be set!")
+                .setEphemeral(true)
+                .queue();
         }
     }
 }

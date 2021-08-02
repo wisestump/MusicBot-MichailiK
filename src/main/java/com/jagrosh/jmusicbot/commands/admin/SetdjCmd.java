@@ -15,6 +15,8 @@
  */
 package com.jagrosh.jmusicbot.commands.admin;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.utils.FinderUtil;
@@ -23,6 +25,10 @@ import com.jagrosh.jmusicbot.commands.AdminCommand;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  *
@@ -34,36 +40,27 @@ public class SetdjCmd extends AdminCommand
     {
         this.name = "setdj";
         this.help = "sets the DJ role for certain music commands";
-        this.arguments = "<rolename|NONE>";
+        this.arguments = "[rolename]";
         this.aliases = bot.getConfig().getAliases(this.name);
+        this.options = Collections.singletonList(new OptionData(OptionType.ROLE, "role", "Sets the DJ Role. Leave it empty to remove the DJ role.", false));
     }
-    
-    @Override
-    protected void execute(CommandEvent event) 
+
+    public void doCommand(SlashCommandEvent event)
     {
-        if(event.getArgs().isEmpty())
-        {
-            event.reply(event.getClient().getError()+" Please include a role name or NONE");
-            return;
-        }
-        Settings s = event.getClient().getSettingsFor(event.getGuild());
-        if(event.getArgs().equalsIgnoreCase("none"))
+        OptionMapping role = event.getOption("role");
+        Settings s = getClient().getSettingsFor(event.getGuild());
+
+        if(role == null)
         {
             s.setDJRole(null);
-            event.reply(event.getClient().getSuccess()+" DJ role cleared; Only Admins can use the DJ commands.");
+            event.reply(getClient().getSuccess()+" DJ role cleared; Only Admins can use the DJ commands.")
+                .queue();
         }
         else
         {
-            List<Role> list = FinderUtil.findRoles(event.getArgs(), event.getGuild());
-            if(list.isEmpty())
-                event.reply(event.getClient().getWarning()+" No Roles found matching \""+event.getArgs()+"\"");
-            else if (list.size()>1)
-                event.reply(event.getClient().getWarning()+FormatUtil.listOfRoles(list, event.getArgs()));
-            else
-            {
-                s.setDJRole(list.get(0));
-                event.reply(event.getClient().getSuccess()+" DJ commands can now be used by users with the **"+list.get(0).getName()+"** role.");
-            }
+            s.setDJRole(role.getAsRole());
+            event.reply(getClient().getSuccess()+" DJ commands can now be used by users with the **"+role.getAsRole().getAsMention()+"** role.")
+                .queue();
         }
     }
     

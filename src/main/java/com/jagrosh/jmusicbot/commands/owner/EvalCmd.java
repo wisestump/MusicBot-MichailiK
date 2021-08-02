@@ -20,6 +20,13 @@ import javax.script.ScriptEngineManager;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.OwnerCommand;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  *
@@ -35,25 +42,44 @@ public class EvalCmd extends OwnerCommand
         this.name = "eval";
         this.help = "evaluates nashorn code";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = false;
+        this.options = Arrays.asList(
+                new OptionData(OptionType.STRING, "code", "Nashorn Code to evaluate", true),
+                new OptionData(OptionType.BOOLEAN, "ephemeral", "Whether to send a ephemeral response. Defaults to false", false)
+        );
     }
     
     @Override
-    protected void execute(CommandEvent event) 
+    protected void execute(SlashCommandEvent event)
     {
+        if(!bot.getConfig().useEval())
+        {
+            event.reply("Code evaluation is disabled.").queue();
+            return;
+        }
+        String args = event.getOption("code").getAsString();
+        boolean ephemeral;
+        if(event.getOption("ephemeral") == null)
+            ephemeral = false;
+        else
+            ephemeral = event.getOption("ephemeral").getAsBoolean();
+
+
+
         ScriptEngine se = new ScriptEngineManager().getEngineByName("Nashorn");
         se.put("bot", bot);
         se.put("event", event);
         se.put("jda", event.getJDA());
         se.put("guild", event.getGuild());
         se.put("channel", event.getChannel());
+
+        event.deferReply(ephemeral).queue();
         try
         {
-            event.reply(event.getClient().getSuccess()+" Evaluated Successfully:\n```\n"+se.eval(event.getArgs())+" ```");
+            event.getHook().sendMessage(getClient().getSuccess()+" Evaluated Successfully:\n```\n"+se.eval(args)+" ```").queue();
         } 
         catch(Exception e)
         {
-            event.reply(event.getClient().getError()+" An exception was thrown:\n```\n"+e+" ```");
+            event.getHook().sendMessage(getClient().getError()+" An exception was thrown:\n```\n"+e+" ```").queue();
         }
     }
     

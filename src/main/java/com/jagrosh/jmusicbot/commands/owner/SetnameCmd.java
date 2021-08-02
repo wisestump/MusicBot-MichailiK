@@ -18,7 +18,13 @@ package com.jagrosh.jmusicbot.commands.owner;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.OwnerCommand;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.RateLimitedException;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
+
+import java.util.Collections;
 
 /**
  *
@@ -32,25 +38,33 @@ public class SetnameCmd extends OwnerCommand
         this.help = "sets the name of the bot";
         this.arguments = "<name>";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = false;
+        this.options = Collections.singletonList(new OptionData(OptionType.STRING, "name", "New name to use", true));
     }
     
     @Override
-    protected void execute(CommandEvent event) 
+    protected void execute(SlashCommandEvent event)
     {
         try 
         {
-            String oldname = event.getSelfUser().getName();
-            event.getSelfUser().getManager().setName(event.getArgs()).complete(false);
-            event.reply(event.getClient().getSuccess()+" Name changed from `"+oldname+"` to `"+event.getArgs()+"`");
+            String oldname = event.getJDA().getSelfUser().getName();
+            String newname = event.getOption("name").getAsString();
+
+            event.getJDA().getSelfUser().getManager().setName(newname).complete(false);
+            event.reply(getClient().getSuccess()+" Name changed from `"+oldname+"` to `"+newname+"`")
+                .setEphemeral(true)
+                .queue();
         } 
         catch(RateLimitedException e) 
         {
-            event.reply(event.getClient().getError()+" Name can only be changed twice per hour!");
+            event.reply(getClient().getError()+" Name can only be changed twice per hour!")
+                .setEphemeral(true)
+                .queue();
         }
         catch(Exception e) 
         {
-            event.reply(event.getClient().getError()+" That name is not valid!");
+            event.reply(getClient().getError()+" That name is not valid!")
+                .setEphemeral(true)
+                .queue();
         }
     }
 }

@@ -19,6 +19,9 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.DJCommand;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+
+import java.util.Collections;
 
 /**
  *
@@ -36,15 +39,19 @@ public class PauseCmd extends DJCommand
     }
 
     @Override
-    public void doCommand(CommandEvent event) 
+    public void doCommand(SlashCommandEvent event)
     {
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
         if(handler.getPlayer().isPaused())
         {
-            event.replyWarning("The player is already paused! Use `"+event.getClient().getPrefix()+"play` to unpause!");
+            event.reply(getClient().getWarning()+" The player is already paused! Use the `/resume` command to unpause!")
+                .setEphemeral(true)
+                .queue();
             return;
         }
         handler.getPlayer().setPaused(true);
-        event.replySuccess("Paused **"+handler.getPlayer().getPlayingTrack().getInfo().title+"**. Type `"+event.getClient().getPrefix()+"play` to unpause!");
+        event.reply("Paused **"+handler.getPlayer().getPlayingTrack().getInfo().title+"**. Use the `/resume` command to unpause!")
+            .allowedMentions(Collections.emptyList())
+            .queue();
     }
 }

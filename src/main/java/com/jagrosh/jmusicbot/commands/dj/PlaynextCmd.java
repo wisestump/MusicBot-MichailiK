@@ -27,6 +27,11 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+import java.util.Collections;
 
 /**
  *
@@ -46,31 +51,31 @@ public class PlaynextCmd extends DJCommand
         this.aliases = bot.getConfig().getAliases(this.name);
         this.beListening = true;
         this.bePlaying = false;
+        this.options = Collections.singletonList(new OptionData(OptionType.STRING, "query", "Title or URL to play", true));
     }
     
     @Override
-    public void doCommand(CommandEvent event)
+    public void doCommand(SlashCommandEvent event)
     {
-        if(event.getArgs().isEmpty() && event.getMessage().getAttachments().isEmpty())
-        {
-            event.replyWarning("Please include a song title or URL!");
-            return;
-        }
-        String args = event.getArgs().startsWith("<") && event.getArgs().endsWith(">") 
-                ? event.getArgs().substring(1,event.getArgs().length()-1) 
-                : event.getArgs().isEmpty() ? event.getMessage().getAttachments().get(0).getUrl() : event.getArgs();
-        event.reply(loadingEmoji+" Loading... `["+args+"]`", m -> bot.getPlayerManager().loadItemOrdered(event.getGuild(), args, new ResultHandler(m,event,false)));
+        // TODO Attachments whenever they get supported
+        // String args = event.getArgs().startsWith("<") && event.getArgs().endsWith(">")
+        //         ? event.getArgs().substring(1,event.getArgs().length()-1)
+        //         : event.getArgs().isEmpty() ? event.getMessage().getAttachments().get(0).getUrl() : event.getArgs();
+
+        String args = event.getOption("query").getAsString();
+        event.deferReply(false).queue();
+        bot.getPlayerManager().loadItemOrdered(event.getGuild(), args, new ResultHandler(args, event,false));
     }
     
     private class ResultHandler implements AudioLoadResultHandler
     {
-        private final Message m;
-        private final CommandEvent event;
+        private final String query;
+        private final SlashCommandEvent event;
         private final boolean ytsearch;
         
-        private ResultHandler(Message m, CommandEvent event, boolean ytsearch)
+        private ResultHandler(String query, SlashCommandEvent event, boolean ytsearch)
         {
-            this.m = m;
+            this.query = query;
             this.event = event;
             this.ytsearch = ytsearch;
         }
@@ -79,15 +84,17 @@ public class PlaynextCmd extends DJCommand
         {
             if(bot.getConfig().isTooLong(track))
             {
-                m.editMessage(FormatUtil.filter(event.getClient().getWarning()+" This track (**"+track.getInfo().title+"**) is longer than the allowed maximum: `"
-                        + TimeUtil.formatTime(track.getDuration())+"` > `"+ TimeUtil.formatTime(bot.getConfig().getMaxSeconds()*1000)+"`")).queue();
+                event.getHook().sendMessage(getClient().getWarning()+" This track (**"+track.getInfo().title+"**) is longer than the allowed maximum: `"
+                        + TimeUtil.formatTime(track.getDuration())+"` > `"+ TimeUtil.formatTime(bot.getConfig().getMaxSeconds()*1000)+"`")
+                .allowedMentions(Collections.emptyList())
+                .queue();
                 return;
             }
             AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-            int pos = handler.addTrackToFront(new QueuedTrack(track, event.getAuthor()))+1;
-            String addMsg = FormatUtil.filter(event.getClient().getSuccess()+" Added **"+track.getInfo().title
-                    +"** (`"+ TimeUtil.formatTime(track.getDuration())+"`) "+(pos==0?"to begin playing":" to the queue at position "+pos));
-            m.editMessage(addMsg).queue();
+            int pos = handler.addTrackToFront(new QueuedTrack(track, event.getUser()))+1;
+            String addMsg = getClient().getSuccess()+" Added **"+track.getInfo().title
+                    +"** (`"+ TimeUtil.formatTime(track.getDuration())+"`) "+(pos==0?"to begin playing":" to the queue at position "+pos);
+            event.getHook().sendMessage(addMsg).allowedMentions(Collections.emptyList()).queue();
         }
         
         @Override
@@ -113,18 +120,22 @@ public class PlaynextCmd extends DJCommand
         public void noMatches()
         {
             if(ytsearch)
-                m.editMessage(FormatUtil.filter(event.getClient().getWarning()+" No results found for `"+event.getArgs()+"`.")).queue();
+                event.getHook().sendMessage(getClient().getWarning()+" No results found for `"+query+"`.")
+                        .allowedMentions(Collections.emptyList())
+                        .queue();
             else
-                bot.getPlayerManager().loadItemOrdered(event.getGuild(), "ytsearch:"+event.getArgs(), new ResultHandler(m,event,true));
+                bot.getPlayerManager().loadItemOrdered(event.getGuild(), "ytsearch:"+query, new ResultHandler(query,event,true));
         }
 
         @Override
         public void loadFailed(FriendlyException throwable)
         {
             if(throwable.severity==FriendlyException.Severity.COMMON)
-                m.editMessage(event.getClient().getError()+" Error loading: "+throwable.getMessage()).queue();
+                event.getHook().sendMessage(getClient().getError()+" Error loading: "+throwable.getMessage())
+                        .allowedMentions(Collections.emptyList())
+                        .queue();
             else
-                m.editMessage(event.getClient().getError()+" Error loading track.").queue();
+                event.getHook().sendMessage(getClient().getError()+" Error loading track.").queue();
         }
     }
 }

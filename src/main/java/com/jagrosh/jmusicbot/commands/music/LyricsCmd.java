@@ -22,6 +22,14 @@ import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.MusicCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -40,53 +48,63 @@ public class LyricsCmd extends MusicCommand
         this.aliases = bot.getConfig().getAliases(this.name);
         this.botPermissions = new Permission[]{Permission.MESSAGE_EMBED_LINKS};
         this.bePlaying = true;
+        this.options = Collections.singletonList(new OptionData(OptionType.STRING, "song", "Song Name, or empty for the playing song"));
     }
 
     @Override
-    public void doCommand(CommandEvent event)
+    public void doCommand(SlashCommandEvent event)
     {
-        event.getChannel().sendTyping().queue();
+        event.deferReply(true).queue();
+
         String title;
-        if(event.getArgs().isEmpty())
-            title = ((AudioHandler)event.getGuild().getAudioManager().getSendingHandler()).getPlayer().getPlayingTrack().getInfo().title;
+        if(event.getOption("song") == null)
+            title = null;
         else
-            title = event.getArgs();
-        client.getLyrics(title).thenAccept(lyrics -> 
+            title = event.getOption("song").getAsString();
+
+        if(title == null)
+            title = ((AudioHandler)event.getGuild().getAudioManager().getSendingHandler()).getPlayer().getPlayingTrack().getInfo().title;
+
+        String finalTitle = title;
+        client.getLyrics(title).thenAccept(lyrics ->
         {
             if(lyrics == null)
             {
-                event.replyError("Lyrics for `" + title + "` could not be found!" + (event.getArgs().isEmpty() ? " Try entering the song name manually (`lyrics [song name]`)" : ""));
+                event.getHook().sendMessage("Lyrics for `" + finalTitle + "` could not be found!").queue();
                 return;
             }
 
             EmbedBuilder eb = new EmbedBuilder()
                     .setAuthor(lyrics.getAuthor())
-                    .setColor(event.getSelfMember().getColor())
+                    .setColor(event.getGuild().getSelfMember().getColor())
                     .setTitle(lyrics.getTitle(), lyrics.getURL());
             if(lyrics.getContent().length()>15000)
             {
-                event.replyWarning("Lyrics for `" + title + "` found but likely not correct: " + lyrics.getURL());
+                event.getHook().sendMessage(getClient().getWarning()+" Lyrics for `" + finalTitle + "` found but likely not correct: " + lyrics.getURL())
+                    .queue();
             }
             else if(lyrics.getContent().length()>2000)
             {
                 String content = lyrics.getContent().trim();
-                while(content.length() > 2000)
+                List<MessageEmbed> embeds = new ArrayList<>();
+                while(content.length() > 4000)
                 {
-                    int index = content.lastIndexOf("\n\n", 2000);
+                    int index = content.lastIndexOf("\n\n", 4000);
                     if(index == -1)
-                        index = content.lastIndexOf("\n", 2000);
+                        index = content.lastIndexOf("\n", 4000);
                     if(index == -1)
-                        index = content.lastIndexOf(" ", 2000);
+                        index = content.lastIndexOf(" ", 4000);
                     if(index == -1)
-                        index = 2000;
-                    event.reply(eb.setDescription(content.substring(0, index).trim()).build());
+                        index = 4000;
+                    embeds.add(eb.setDescription(content.substring(0, index).trim()).build());
                     content = content.substring(index).trim();
                     eb.setAuthor(null).setTitle(null, null);
                 }
-                event.reply(eb.setDescription(content).build());
+                embeds.add(eb.setDescription(content).build());
+                event.getHook().sendMessageEmbeds(embeds).queue();
             }
             else
-                event.reply(eb.setDescription(lyrics.getContent()).build());
+                event.getHook().sendMessageEmbeds(eb.setDescription(lyrics.getContent()).build()).queue();
         });
     }
 }

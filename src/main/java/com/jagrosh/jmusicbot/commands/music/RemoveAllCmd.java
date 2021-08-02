@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 John Grosh <john.a.grosh@gmail.com>.
+ * Copyright 2021 John Grosh <john.a.grosh@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,44 +15,44 @@
  */
 package com.jagrosh.jmusicbot.commands.music;
 
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.MusicCommand;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 
-/**
- *
- * @author John Grosh <john.a.grosh@gmail.com>
- */
-public class NowplayingCmd extends MusicCommand 
+
+public class RemoveAllCmd extends MusicCommand
 {
-    public NowplayingCmd(Bot bot)
+    public RemoveAllCmd(Bot bot)
     {
         super(bot);
-        this.name = "nowplaying";
-        this.help = "shows the song that is currently playing";
+        this.name = "removeall";
+        this.help = "removes all your songs from the queue";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.botPermissions = new Permission[]{Permission.MESSAGE_EMBED_LINKS};
+        this.beListening = false;
+        this.bePlaying = true;
     }
 
     @Override
     public void doCommand(SlashCommandEvent event)
     {
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-        Message m = handler.getNowPlaying(event.getJDA());
-        if(m==null)
+        if(handler.getQueue().isEmpty())
         {
-            event.reply(handler.getNoMusicPlaying(event.getJDA())).queue();
-            bot.getNowplayingHandler().clearLastNPMessage(event.getGuild());
+            event.reply(getClient().getError()+" There is nothing in the queue!")
+                    .setEphemeral(true)
+                    .queue();
+            return;
         }
+
+        int count = handler.getQueue().removeAll(event.getUser().getIdLong());
+        if (count == 0)
+            event.reply(getClient().getWarning()+" You don't have any songs in the queue!")
+                    .setEphemeral(true)
+                    .queue();
         else
-        {
-            event.reply(m).complete();
-            bot.getNowplayingHandler().setLastNPMessage(event.getHook().retrieveOriginal().complete());
-        }
+            event.reply(getClient().getSuccess()+" Successfully removed your " + count + " entries.")
+                    .setEphemeral(true)
+                    .queue();
     }
 }

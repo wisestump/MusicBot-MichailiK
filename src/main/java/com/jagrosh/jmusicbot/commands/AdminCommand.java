@@ -16,13 +16,16 @@
 package com.jagrosh.jmusicbot.commands;
 
 import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 
 /**
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
-public abstract class AdminCommand extends Command
+public abstract class AdminCommand extends SlashCommand
 {
     public AdminCommand()
     {
@@ -34,6 +37,19 @@ public abstract class AdminCommand extends Command
                 return true;
             return event.getMember().hasPermission(Permission.MANAGE_SERVER);
         });
-        this.guildOnly = true;
     }
+
+    @Override
+    protected void execute(SlashCommandEvent event)
+    {
+        if(!event.isFromGuild())
+        {
+            event.reply(getClient().getError()+" This command cannot be used in Direct messages").setEphemeral(true).queue();
+            return;
+        }
+
+        doCommand(event);
+    }
+
+    public abstract void doCommand(SlashCommandEvent event);
 }

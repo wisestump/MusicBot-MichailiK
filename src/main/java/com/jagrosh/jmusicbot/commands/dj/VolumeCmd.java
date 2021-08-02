@@ -21,6 +21,13 @@ import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.DJCommand;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
+import com.sun.org.apache.xpath.internal.objects.XString;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+import java.util.Collections;
 
 /**
  *
@@ -35,35 +42,34 @@ public class VolumeCmd extends DJCommand
         this.aliases = bot.getConfig().getAliases(this.name);
         this.help = "sets or shows volume";
         this.arguments = "[0-150]";
+        this.options = Collections.singletonList(new OptionData(OptionType.INTEGER, "volume", "Volume in percent", false));
     }
 
     @Override
-    public void doCommand(CommandEvent event)
+    public void doCommand(SlashCommandEvent event)
     {
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-        Settings settings = event.getClient().getSettingsFor(event.getGuild());
+        Settings settings = getClient().getSettingsFor(event.getGuild());
         int volume = handler.getPlayer().getVolume();
-        if(event.getArgs().isEmpty())
+        if(event.getOption("volume") == null)
         {
-            event.reply(FormatUtil.volumeIcon(volume)+" Current volume is `"+volume+"`");
+            event.reply(FormatUtil.volumeIcon(volume)+" Current volume is `"+settings.getVolume()+"`")
+                    .setEphemeral(true)
+                    .queue();
         }
         else
         {
-            int nvolume;
-            try{
-                nvolume = Integer.parseInt(event.getArgs());
-            }catch(NumberFormatException e){
-                nvolume = -1;
-            }
+            int nvolume = (int) event.getOption("volume").getAsLong();
             if(nvolume<0 || nvolume>150)
-                event.reply(event.getClient().getError()+" Volume must be a valid integer between 0 and 150!");
+                event.reply(getClient().getError()+" Volume must be a valid integer between 0 and 150!")
+                        .setEphemeral(true)
+                        .queue();
             else
             {
                 handler.getPlayer().setVolume(nvolume);
                 settings.setVolume(nvolume);
-                event.reply(FormatUtil.volumeIcon(nvolume)+" Volume changed from `"+volume+"` to `"+nvolume+"`");
+                event.reply(FormatUtil.volumeIcon(volume)+" Volume changed from `"+volume+"` to `"+nvolume+"`").queue();
             }
         }
     }
-    
 }

@@ -15,6 +15,7 @@
  */
 package com.jagrosh.jmusicbot.commands.admin;
 
+import java.util.Collections;
 import java.util.List;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.commons.utils.FinderUtil;
@@ -22,7 +23,13 @@ import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.commands.AdminCommand;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  *
@@ -34,36 +41,35 @@ public class SetvcCmd extends AdminCommand
     {
         this.name = "setvc";
         this.help = "sets the voice channel for playing music";
-        this.arguments = "<channel|NONE>";
+        this.arguments = "[channel]";
         this.aliases = bot.getConfig().getAliases(this.name);
+        this.options = Collections.singletonList(new OptionData(OptionType.CHANNEL, "channel", "Sets the voice channel. Leave it empty to remove the voice channel.", false));
     }
-    
-    @Override
-    protected void execute(CommandEvent event) 
+
+    public void doCommand(SlashCommandEvent event)
     {
-        if(event.getArgs().isEmpty())
-        {
-            event.reply(event.getClient().getError()+" Please include a voice channel or NONE");
-            return;
-        }
-        Settings s = event.getClient().getSettingsFor(event.getGuild());
-        if(event.getArgs().equalsIgnoreCase("none"))
+        Settings s = getClient().getSettingsFor(event.getGuild());
+        OptionMapping channel = event.getOption("channel");
+
+        if(channel == null)
         {
             s.setVoiceChannel(null);
-            event.reply(event.getClient().getSuccess()+" Music can now be played in any channel");
+            event.reply(getClient().getSuccess()+" Music can now be played in any channel")
+                .queue();
         }
         else
         {
-            List<VoiceChannel> list = FinderUtil.findVoiceChannels(event.getArgs(), event.getGuild());
-            if(list.isEmpty())
-                event.reply(event.getClient().getWarning()+" No Voice Channels found matching \""+event.getArgs()+"\"");
-            else if (list.size()>1)
-                event.reply(event.getClient().getWarning()+FormatUtil.listOfVChannels(list, event.getArgs()));
-            else
+            if(channel.getAsGuildChannel().getType() != ChannelType.VOICE)
             {
-                s.setVoiceChannel(list.get(0));
-                event.reply(event.getClient().getSuccess()+" Music can now only be played in **"+list.get(0).getName()+"**");
+                event.reply(getClient().getError()+" The channel must be a voice channel!")
+                        .setEphemeral(true)
+                        .queue();
+                return;
             }
+            s.setVoiceChannel((VoiceChannel) channel.getAsGuildChannel());
+            event.reply(getClient().getSuccess()+" Music commands can now only be played in "+channel.getAsGuildChannel().getAsMention())
+                    .queue();
+
         }
     }
 }

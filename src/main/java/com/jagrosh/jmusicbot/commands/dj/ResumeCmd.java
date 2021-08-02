@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 John Grosh <john.a.grosh@gmail.com>.
+ * Copyright 2021 John Grosh <john.a.grosh@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,49 +15,44 @@
  */
 package com.jagrosh.jmusicbot.commands.dj;
 
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.DJCommand;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Collections;
 
-/**
- *
- * @author John Grosh <john.a.grosh@gmail.com>
- */
-public class SkiptoCmd extends DJCommand 
+public class ResumeCmd extends DJCommand
 {
-    public SkiptoCmd(Bot bot)
+    public ResumeCmd(Bot bot)
     {
         super(bot);
-        this.name = "skipto";
-        this.help = "skips to the specified song";
-        this.arguments = "<position>";
+        this.name = "resume";
+        this.help = "resumes playback of music";
         this.aliases = bot.getConfig().getAliases(this.name);
-        this.bePlaying = true;
-        this.options = Collections.singletonList(new OptionData(OptionType.INTEGER, "position", "Position to skip to", true));
     }
-
     @Override
     public void doCommand(SlashCommandEvent event)
     {
-        int index = (int) event.getOption("Position").getAsLong();
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-        if(index<1 || index>handler.getQueue().size())
+        if(handler.getPlayer().getPlayingTrack() == null)
         {
-            event.reply(getClient().getError()+" Position must be a valid integer between 1 and "+handler.getQueue().size()+"!")
+            event.reply(getClient().getError()+" There must be music playing to use that!")
                 .setEphemeral(true)
                 .queue();
-            return;
         }
-        handler.getQueue().skip(index-1);
-        event.reply(getClient().getSuccess()+" Skipped to **"+handler.getQueue().get(0).getTrack().getInfo().title+"**")
-            .allowedMentions(Collections.emptyList())
-            .queue();
-        handler.getPlayer().stopTrack();
+        else if(!handler.getPlayer().isPaused())
+        {
+            event.reply(getClient().getError()+" The music isn't paused!")
+                    .setEphemeral(true)
+                    .queue();
+        }
+        else
+        {
+            handler.getPlayer().setPaused(false);
+            event.reply(getClient().getSuccess() + " Resumed **" + handler.getPlayer().getPlayingTrack().getInfo().title + "**.")
+                    .allowedMentions(Collections.emptyList())
+                    .queue();
+        }
     }
 }

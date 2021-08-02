@@ -15,17 +15,25 @@
  */
 package com.jagrosh.jmusicbot.commands;
 
-import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 
 /**
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
-public abstract class OwnerCommand extends Command
+public class OwnerCommand extends SlashCommand
 {
     public OwnerCommand()
     {
         this.category = new Category("Owner");
         this.ownerCommand = true;
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event)
+    {
+        event.reply("Error! This should not happen").setEphemeral(true).queue();
     }
 }

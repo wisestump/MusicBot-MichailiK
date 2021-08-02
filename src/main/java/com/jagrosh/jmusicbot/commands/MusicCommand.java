@@ -17,19 +17,23 @@ package com.jagrosh.jmusicbot.commands;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.audio.AudioHandler;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 
 /**
  *
  * @author John Grosh <john.a.grosh@gmail.com>
  */
-public abstract class MusicCommand extends Command 
+public abstract class MusicCommand extends SlashCommand
 {
     protected final Bot bot;
     protected boolean bePlaying;
@@ -38,28 +42,23 @@ public abstract class MusicCommand extends Command
     public MusicCommand(Bot bot)
     {
         this.bot = bot;
-        this.guildOnly = true;
         this.category = new Category("Music");
     }
     
     @Override
-    protected void execute(CommandEvent event) 
+    protected void execute(SlashCommandEvent event)
     {
-        Settings settings = event.getClient().getSettingsFor(event.getGuild());
-        TextChannel tchannel = settings.getTextChannel(event.getGuild());
-        if(tchannel!=null && !event.getTextChannel().equals(tchannel))
+        if(!event.isFromGuild())
         {
-            try 
-            {
-                event.getMessage().delete().queue();
-            } catch(PermissionException ignore){}
-            event.replyInDm(event.getClient().getError()+" You can only use that command in "+tchannel.getAsMention()+"!");
+            event.reply(getClient().getError()+" This command cannot be used in Direct messages").setEphemeral(true).queue();
             return;
         }
+        Settings settings = getClient().getSettingsFor(event.getGuild());
+        TextChannel tchannel = settings.getTextChannel(event.getGuild());
         bot.getPlayerManager().setUpHandler(event.getGuild()); // no point constantly checking for this later
         if(bePlaying && !((AudioHandler)event.getGuild().getAudioManager().getSendingHandler()).isMusicPlaying(event.getJDA()))
         {
-            event.reply(event.getClient().getError()+" There must be music playing to use that!");
+            event.reply(getClient().getError()+" There must be music playing to use that!").setEphemeral(true).queue();
             return;
         }
         if(beListening)
@@ -70,14 +69,18 @@ public abstract class MusicCommand extends Command
             GuildVoiceState userState = event.getMember().getVoiceState();
             if(!userState.inVoiceChannel() || userState.isDeafened() || (current!=null && !userState.getChannel().equals(current)))
             {
-                event.replyError("You must be listening in "+(current==null ? "a voice channel" : "**"+current.getName()+"**")+" to use that!");
+                event.reply(getClient().getError()+" You must be listening in "+(current==null ? "a voice channel" : "**"+current.getName()+"**")+" to use that!")
+                    .setEphemeral(true)
+                    .queue();
                 return;
             }
 
             VoiceChannel afkChannel = userState.getGuild().getAfkChannel();
             if(afkChannel != null && afkChannel.equals(userState.getChannel()))
             {
-                event.replyError("You cannot use that command in an AFK channel!");
+                event.reply(getClient().getError()+" You cannot use that command in an AFK channel!")
+                    .setEphemeral(true)
+                    .queue();
                 return;
             }
 
@@ -89,7 +92,9 @@ public abstract class MusicCommand extends Command
                 }
                 catch(PermissionException ex) 
                 {
-                    event.reply(event.getClient().getError()+" I am unable to connect to **"+userState.getChannel().getName()+"**!");
+                    event.reply(getClient().getError()+" I am unable to connect to **"+userState.getChannel().getName()+"**!")
+                        .setEphemeral(true)
+                        .queue();
                     return;
                 }
             }
@@ -98,5 +103,5 @@ public abstract class MusicCommand extends Command
         doCommand(event);
     }
     
-    public abstract void doCommand(CommandEvent event);
+    public abstract void doCommand(SlashCommandEvent event);
 }

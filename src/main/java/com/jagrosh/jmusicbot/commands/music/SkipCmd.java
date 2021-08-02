@@ -16,10 +16,14 @@
 package com.jagrosh.jmusicbot.commands.music;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jmusicbot.Bot;
 import com.jagrosh.jmusicbot.audio.AudioHandler;
 import com.jagrosh.jmusicbot.commands.MusicCommand;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+
+import java.util.Collections;
 
 /**
  *
@@ -38,38 +42,47 @@ public class SkipCmd extends MusicCommand
     }
 
     @Override
-    public void doCommand(CommandEvent event) 
+    public void doCommand(SlashCommandEvent event)
     {
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-        if(event.getAuthor().getIdLong()==handler.getRequester())
+        if(event.getUser().getIdLong()==handler.getRequester())
         {
-            event.reply(event.getClient().getSuccess()+" Skipped **"+handler.getPlayer().getPlayingTrack().getInfo().title+"**");
+            event.reply(getClient().getSuccess()+" Skipped **"+handler.getPlayer().getPlayingTrack().getInfo().title+"**").queue();
             handler.getPlayer().stopTrack();
         }
         else
         {
-            int listeners = (int)event.getSelfMember().getVoiceState().getChannel().getMembers().stream()
+            boolean ephemeral = false;
+
+            int listeners = (int)event.getGuild().getSelfMember().getVoiceState().getChannel().getMembers().stream()
                     .filter(m -> !m.getUser().isBot() && !m.getVoiceState().isDeafened()).count();
             String msg;
-            if(handler.getVotes().contains(event.getAuthor().getId()))
-                msg = event.getClient().getWarning()+" You already voted to skip this song `[";
+            if(handler.getVotes().contains(event.getUser().getId()))
+            {
+                msg = getClient().getWarning() + " You already voted to skip this song `[";
+                ephemeral = true;
+            }
             else
             {
-                msg = event.getClient().getSuccess()+" You voted to skip the song `[";
-                handler.getVotes().add(event.getAuthor().getId());
+                msg = getClient().getSuccess()+" You voted to skip the song `[";
+                handler.getVotes().add(event.getUser().getId());
             }
-            int skippers = (int)event.getSelfMember().getVoiceState().getChannel().getMembers().stream()
+            int skippers = (int)event.getGuild().getSelfMember().getVoiceState().getChannel().getMembers().stream()
                     .filter(m -> handler.getVotes().contains(m.getUser().getId())).count();
             int required = (int)Math.ceil(listeners * .55);
             msg+= skippers+" votes, "+required+"/"+listeners+" needed]`";
             if(skippers>=required)
             {
-                User u = event.getJDA().getUserById(handler.getRequester());
-                msg+="\n"+event.getClient().getSuccess()+" Skipped **"+handler.getPlayer().getPlayingTrack().getInfo().title
-                    +"**"+(handler.getRequester()==0 ? "" : " (requested by "+(u==null ? "someone" : "**"+u.getName()+"**")+")");
+                msg+="\n"+getClient().getSuccess()+" Skipped **"+handler.getPlayer().getPlayingTrack().getInfo().title
+                    +"**"+(handler.getRequester()==0 ? "" : " (requested by <@"+handler.getRequester()+">)");
                 handler.getPlayer().stopTrack();
+
+                ephemeral = false;
             }
-            event.reply(msg);
+            event.reply(msg)
+                .setEphemeral(ephemeral)
+                .allowedMentions(Collections.emptyList())
+                .queue();
         }
     }
     
