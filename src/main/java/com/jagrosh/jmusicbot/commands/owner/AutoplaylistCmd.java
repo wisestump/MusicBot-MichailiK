@@ -53,7 +53,7 @@ public class AutoplaylistCmd extends OwnerCommand
             return;
         }
 
-        String args = event.getOption("Name").getAsString();
+        String args = event.getOption("name").getAsString();
 
         if(args.equalsIgnoreCase("none"))
         {
