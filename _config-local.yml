@@ -1,2 +1,3 @@
+url: "./"
 plugins:
   - jekyll-remote-theme
