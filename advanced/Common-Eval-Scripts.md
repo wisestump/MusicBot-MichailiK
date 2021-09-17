@@ -2,8 +2,9 @@
 layout: default
 title: Advanced Eval Scripts
 nav_order: 13
+parent: Advanced
 description: "Eval scripts for advanced JMusicBot users"
-permalink: /advanced-eval
+permalink: /advanced/eval
 ---
 
 **Please remember that the eval command is potentially dangerous; it is locked to the bot owner, but _never_ run a script unless you know what it does!**

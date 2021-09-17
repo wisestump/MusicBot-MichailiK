@@ -1,9 +1,10 @@
 ---
 layout: default
 title: Getting a Bot Token
-nav_order: 5
+nav_order: 3
+parent: Setup
 description: "Instructions for how to create and obtain a Discord bot token"
-permalink: /getting-a-bot-token
+permalink: /setup/getting-a-bot-token
 ---
 
 This page will describe, in detail, how to obtain a token for your music bot.

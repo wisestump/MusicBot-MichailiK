@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Hosting
-nav_order: 10
+nav_order: 7
 description: "Recommended hosts for JMusicBot"
 permalink: /hosting
 ---

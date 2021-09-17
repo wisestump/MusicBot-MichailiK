@@ -1,9 +1,10 @@
 ---
 layout: default
 title: Installing Java
-nav_order: 3
+nav_order: 1
+parent: Setup
 description: "Install Java on your system"
-permalink: /installing-java
+permalink: /setup/installing-java
 ---
 
 **Generally, a reliable place to find Java builds is [AdoptOpenJDK](https://adoptopenjdk.net/index.html).**

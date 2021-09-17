@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Playlists
-nav_order: 6
+nav_order: 3
 description: "Playlists on JMusicBot"
 permalink: /playlists
 ---

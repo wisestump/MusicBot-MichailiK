@@ -2,8 +2,9 @@
 layout: default
 title: Advanced Playlist Generation
 nav_order: 12
+parent: Advanced
 description: "Playlist generation snippets for advanced JMusicBot users"
-permalink: /advanced-playlists
+permalink: /advanced/playlists
 ---
 
 This page describes how to generate playlist (txt) files from folders. These examples assume that your songs are in mp3 format; if you are using a different format, replace `mp3` with your format in all provided commands.

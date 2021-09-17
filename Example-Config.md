@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Example Config
-nav_order: 8
+nav_order: 5
 description: "Example config file for JMusicBot"
 permalink: /config
 ---

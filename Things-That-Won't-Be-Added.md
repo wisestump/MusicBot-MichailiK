@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Things that Won't be Added
-nav_order: 14
+nav_order: 9
 description: "Things that will not be added to JMusicBot"
 permalink: /things-that-wont-be-added
 ---

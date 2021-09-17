@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Troubleshooting
-nav_order: 9
+nav_order: 6
 description: "Common troubleshooting tasks for JMusicBot"
 permalink: /troubleshooting
 ---

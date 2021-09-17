@@ -2,8 +2,9 @@
 layout: default
 title: Advanced Config Options
 nav_order: 11
+parent: Advanced
 description: "Configuration settings for advanced JMusicBot users"
-permalink: /advanced-config
+permalink: /advanced/config
 ---
 
 ## Specify a different config file
