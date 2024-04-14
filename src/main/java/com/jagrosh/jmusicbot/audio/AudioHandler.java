@@ -19,15 +19,15 @@ import com.jagrosh.jmusicbot.playlist.PlaylistLoader.Playlist;
 import com.jagrosh.jmusicbot.queue.AbstractQueue;
 import com.jagrosh.jmusicbot.settings.QueueType;
 import com.jagrosh.jmusicbot.settings.RepeatMode;
+import com.jagrosh.jmusicbot.utils.OtherUtil;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioTrack;
@@ -36,15 +36,20 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
+import net.dv8tion.jda.api.audio.SpeakingMode;
+import net.dv8tion.jda.api.audio.hooks.ConnectionListener;
+import net.dv8tion.jda.api.audio.hooks.ConnectionStatus;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author John Grosh <john.a.grosh@gmail.com>
  */
-public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
+public class AudioHandler extends AudioEventAdapter implements AudioSendHandler, ConnectionListener
 {
     public final static String PLAY_EMOJI  = "\u25B6"; // ▶
     public final static String PAUSE_EMOJI = "\u23F8"; // ⏸
@@ -59,12 +64,17 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler
     
     private AudioFrame lastFrame;
     private AbstractQueue<QueuedTrack> queue;
+    private final List<Long> speakingUsers = new ArrayList<>();
+    private int volume;
+    private int attenuation;
 
-    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player)
+    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player, int volume, int attenuation)
     {
         this.manager = manager;
         this.audioPlayer = player;
         this.guildId = guild.getIdLong();
+        this.volume = volume;
+        this.attenuation = attenuation;
 
         this.setQueueType(manager.getBot().getSettingsManager().getSettings(guildId).getQueueType());
     }
@@ -161,6 +171,40 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler
                 manager.getBot().closeAudioConnection(guildId);
         });
         return true;
+    }
+    
+    public void setVolume(int volume)
+    {
+        this.volume = volume;
+        determineVolume();
+    }
+    
+    public int getVolume()
+    {
+        return volume;
+    }
+    
+    public void setAttenuation(int attenuation)
+    {
+        this.attenuation = attenuation;
+        determineVolume();
+    }
+    
+    public int getAttenuation()
+    {
+        return attenuation;
+    }
+    
+    private void determineVolume()
+    {
+        if (attenuation == 0) {
+            audioPlayer.setVolume(volume);
+            return;
+        }
+        if (speakingUsers.isEmpty())
+            audioPlayer.setVolume(volume);
+        else
+            audioPlayer.setVolume((int) (volume * ((float) attenuation / 100)));
     }
     
     // Audio Events
@@ -270,7 +314,39 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler
     {
         return audioPlayer.isPaused() ? PAUSE_EMOJI : PLAY_EMOJI;
     }
-    
+
+    // Connection Listener methods
+    @Override
+    public void onPing(long l) {
+        LoggerFactory.getLogger("AudioHandler").info("Ping for audio connection in "+guildId+" is "+l+"ms");
+    }
+
+    @Override
+    public void onStatusChange(@NotNull ConnectionStatus connectionStatus) {
+        // unused
+    }
+
+    @Override
+    public void onUserSpeaking(@NotNull User user, boolean b) {
+        // ignored
+    }
+
+    @Override
+    public void onUserSpeaking(@NotNull User user, @NotNull EnumSet<SpeakingMode> modes) {
+        LoggerFactory.getLogger("AudioHandler").info("User "+user.getName()+" speak state changed with modes "+modes);
+        if (modes.contains(SpeakingMode.VOICE))
+        {
+            if (!speakingUsers.contains(user.getIdLong()))
+                speakingUsers.add(user.getIdLong());
+        }
+        else
+        {
+            speakingUsers.remove(user.getIdLong());
+        }
+
+        determineVolume();
+    }
+
     // Audio Send Handler methods
     /*@Override
     public boolean canProvide() 
@@ -292,7 +368,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler
 
         return data;
     }*/
-    
+
     @Override
     public boolean canProvide() 
     {

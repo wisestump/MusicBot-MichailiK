@@ -58,7 +58,8 @@ public class SettingsManager implements GuildSettingsManager<Settings>
                         o.has("repeat_mode")     ? o.getEnum(RepeatMode.class, "repeat_mode"): RepeatMode.OFF,
                         o.has("prefix")          ? o.getString("prefix")                     : null,
                         o.has("skip_ratio")      ? o.getDouble("skip_ratio")                 : -1,
-                        o.has("queue_type")      ? o.getEnum(QueueType.class, "queue_type")  : QueueType.FAIR));
+                        o.has("queue_type")      ? o.getEnum(QueueType.class, "queue_type")  : QueueType.FAIR,
+                        o.has("attenuation")     ? o.getInt("attenuation")                   : 0));
             });
         } catch (NoSuchFileException e) {
             // create an empty json file
@@ -95,7 +96,7 @@ public class SettingsManager implements GuildSettingsManager<Settings>
 
     private Settings createDefaultSettings()
     {
-        return new Settings(this, 0, 0, 0, 100, null, RepeatMode.OFF, null, -1, QueueType.FAIR);
+        return new Settings(this, 0, 0, 0, 100, null, RepeatMode.OFF, null, -1, QueueType.FAIR, 0);
     }
 
     protected void writeSettings()
@@ -122,6 +123,8 @@ public class SettingsManager implements GuildSettingsManager<Settings>
                 o.put("skip_ratio", s.getSkipRatio());
             if(s.getQueueType() != QueueType.FAIR)
                 o.put("queue_type", s.getQueueType().name());
+            if(s.getAttenuation() != 0)
+                o.put("attenuation", s.getAttenuation());
             obj.put(Long.toString(key), o);
         });
         try {

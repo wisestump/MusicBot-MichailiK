@@ -202,6 +202,7 @@ public class JMusicBot
                         new ShuffleCmd(bot),
                         new SkipCmd(bot),
 
+                        new AttenuationCmd(bot),
                         new ForceRemoveCmd(bot),
                         new ForceskipCmd(bot),
                         new MoveTrackCmd(bot),

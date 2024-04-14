@@ -39,8 +39,9 @@ public class Settings implements GuildSettingsProvider
     private QueueType queueType;
     private String prefix;
     private double skipRatio;
+    private int attenuation;
 
-    public Settings(SettingsManager manager, String textId, String voiceId, String roleId, int volume, String defaultPlaylist, RepeatMode repeatMode, String prefix, double skipRatio, QueueType queueType)
+    public Settings(SettingsManager manager, String textId, String voiceId, String roleId, int volume, String defaultPlaylist, RepeatMode repeatMode, String prefix, double skipRatio, QueueType queueType, int attenuation)
     {
         this.manager = manager;
         try
@@ -73,9 +74,10 @@ public class Settings implements GuildSettingsProvider
         this.prefix = prefix;
         this.skipRatio = skipRatio;
         this.queueType = queueType;
+        this.attenuation = attenuation;
     }
     
-    public Settings(SettingsManager manager, long textId, long voiceId, long roleId, int volume, String defaultPlaylist, RepeatMode repeatMode, String prefix, double skipRatio, QueueType queueType)
+    public Settings(SettingsManager manager, long textId, long voiceId, long roleId, int volume, String defaultPlaylist, RepeatMode repeatMode, String prefix, double skipRatio, QueueType queueType, int attenuation)
     {
         this.manager = manager;
         this.textId = textId;
@@ -87,6 +89,7 @@ public class Settings implements GuildSettingsProvider
         this.prefix = prefix;
         this.skipRatio = skipRatio;
         this.queueType = queueType;
+        this.attenuation = attenuation;
     }
     
     // Getters
@@ -141,6 +144,11 @@ public class Settings implements GuildSettingsProvider
         return prefix == null ? Collections.emptySet() : Collections.singleton(prefix);
     }
     
+    public int getAttenuation()
+    {
+        return attenuation;
+    }
+    
     // Setters
     public void setTextChannel(TextChannel tc)
     {
@@ -193,6 +201,12 @@ public class Settings implements GuildSettingsProvider
     public void setQueueType(QueueType queueType)
     {
         this.queueType = queueType;
+        this.manager.writeSettings();
+    }
+
+    public void setAttenuation(int attenuation)
+    {
+        this.attenuation = attenuation;
         this.manager.writeSettings();
     }
 }
