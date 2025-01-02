@@ -158,7 +158,7 @@ public class YouTubeUtil {
                 interceptorFuture.complete(e);
             }
 
-            return next.execute(req);
+            return next.execute(req)    ;
         });
 
         //
@@ -181,7 +181,8 @@ public class YouTubeUtil {
 
 
         } catch (Exception e) {
-            LOGGER.error("Failed to obtain PO token for YouTube playback", e);
+            LOGGER.error("Failed to obtain PO token for YouTube playback: {}", e.getMessage());
+            LOGGER.debug("Exception:", e);
         } finally {
             interceptor.close();
             // Only quit the browser when not in headless mode. Helps with troubleshooting.
